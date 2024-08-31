@@ -1,17 +1,27 @@
 const API_KEY = "15e4c4eee59c4a30ae9b42e0417299d4";
 const url = "https://newsapi.org/v2/everything?q=";
 
-window.addEventListener('load' , () =>fetchNews("India"));
+window.addEventListener('load', () => fetchNews("India"));
 
 function reload() {
     window.location.reload();
 }
 
 async function fetchNews(query) {
-    const res = await fetch(`${url}${query}&apiKey=${API_KEY}`);
-    const data = await res.json();
-    console.log(data);
-    bindData(data.articles);
+    try {
+        const res = await fetch(`${url}${query}&apiKey=${API_KEY}`);
+        const data = await res.json();
+
+        if (data.articles && Array.isArray(data.articles)) {
+            bindData(data.articles);
+        } else {
+            console.error('Unexpected API response:', data);
+            displayError("No articles found or unexpected API response.");
+        }
+    } catch (error) {
+        console.error('Error fetching news:', error);
+        displayError("Failed to fetch news. Please try again later.");
+    }
 }
 
 function bindData(articles) {
@@ -28,7 +38,7 @@ function bindData(articles) {
     });
 }
 
-function fillDataInCard(cardClone,article){
+function fillDataInCard(cardClone, article) {
     const newsImg = cardClone.querySelector('#news-img');
     const newsTitle = cardClone.querySelector('#news-title');
     const newsSource = cardClone.querySelector('#news-source');
@@ -38,8 +48,7 @@ function fillDataInCard(cardClone,article){
     newsTitle.innerHTML = article.title;
     newsDesc.innerHTML = article.description;
 
-
-    const date = new Date(article.publishedAt).toLocaleString("en-US",{
+    const date = new Date(article.publishedAt).toLocaleString("en-US", {
         timeZone: "Asia/Jakarta",
     });
 
@@ -51,6 +60,7 @@ function fillDataInCard(cardClone,article){
 }
 
 let curSelectedNav = null;
+
 function onNavItemClick(id) {
     fetchNews(id);
     const navItem = document.getElementById(id);
@@ -64,9 +74,13 @@ const searchText = document.getElementById("search-text");
 
 searchButton.addEventListener('click', () => {
     const query = searchText.value;
-    if(!query) return;
+    if (!query) return;
     fetchNews(query);
     curSelectedNav?.classList.remove("active");
     curSelectedNav = null;
 });
 
+function displayError(message) {
+    const cardsContainer = document.getElementById("cards-container");
+    cardsContainer.innerHTML = `<p class="error-message">${message}</p>`;
+}
